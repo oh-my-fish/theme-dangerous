@@ -100,7 +100,7 @@ function __dangerous_git_status -d 'Check git status'
 end
 
 function __dangerous_is_git_stashed -d 'Check if there are stashed commits'
-    command git log --format="%gd" -g $argv 'refs/stash' -- ^ /dev/null | wc -l
+    command git log --format="%gd" -g $argv 'refs/stash' -- ^ /dev/null | wc -l | tr -d '[:space:]'
 end
 
 function __dangerous_prompt_git_symbols -d 'Displays the git symbols'
