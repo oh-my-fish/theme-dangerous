@@ -55,7 +55,7 @@ function __dangerous_preexec -d 'Execute after hitting <Enter> before doing anyt
     set -e dangerous_prompt_error[1]
     if not type -q $cmd[1]
       if [ -d $cmd[1] ]
-        set dangerous_prompt_error (cd $cmd[1] ^&1)
+        set dangerous_prompt_error (cd $cmd[1] 2>&1)
         and commandline ''
         commandline -f repaint
         return
@@ -75,7 +75,7 @@ function __dangerous_preexec -d 'Execute after hitting <Enter> before doing anyt
         end
       case 'cd'
         if [ (count $cmd) -le 2 ]
-          set dangerous_prompt_error (eval $cmd ^&1)
+          set dangerous_prompt_error (eval $cmd 2>&1)
           and commandline ''
           if [ (count $dangerous_prompt_error) -gt 1 ]
             set dangerous_prompt_error $dangerous_prompt_error[1]
@@ -99,7 +99,7 @@ end
 # => Fish termination
 #####################
 function __dangerous_on_termination -s HUP -s INT -s QUIT -s TERM --on-process %self -d 'Execute when shell terminates'
-  set -l item (contains -i %self $dangerous_sessions_active_pid ^ /dev/null)
+  set -l item (contains -i %self $dangerous_sessions_active_pid 2> /dev/null)
   __dangerous_detach_session $item
 end
 
@@ -162,7 +162,7 @@ function d -d 'List directory history, jump to directory in list with d <number>
       cd $$dir_hist[1][(expr $num_items - $dir_num)]
     case 'e'
       read -p 'echo -n (set_color $dangerous_colors[5])"♻ Erase [0"$last_item"] ❯ "' -n $input_length -l dir_num
-      set -e $dir_hist[1][(expr $num_items - $dir_num)] ^ /dev/null
+      set -e $dir_hist[1][(expr $num_items - $dir_num)] 2> /dev/null
       set dir_hist_val (count $$dir_hist)
       tput cuu1
   end
@@ -245,7 +245,7 @@ function c -d 'List command history, load command from prompt with c <prompt num
         tput cuu1
       end
       tput cuu1
-      set -e $cmd_hist[1][(expr $num_items - $cmd_num)] ^ /dev/null
+      set -e $cmd_hist[1][(expr $num_items - $cmd_num)] 2> /dev/null
   end
   tput ed
   tput cuu1
@@ -353,12 +353,12 @@ end
 function __dangerous_detach_session -d 'Detach current session'
   set cmd_hist cmd_hist_nosession
   set dir_hist dir_hist_nosession
-  if test -z $$dir_hist ^ /dev/null
+  if test -z $$dir_hist 2> /dev/null
     set $dir_hist $PWD
   end
   set dir_hist_val (count $$dir_hist)
-  set -e dangerous_sessions_active_pid[$argv] ^ /dev/null
-  set -e dangerous_sessions_active[$argv] ^ /dev/null
+  set -e dangerous_sessions_active_pid[$argv] 2> /dev/null
+  set -e dangerous_sessions_active[$argv] 2> /dev/null
   set dangerous_session_current ''
   cd $$dir_hist[1][$dir_hist_val]
   set no_prompt_hist 'T'
@@ -379,11 +379,11 @@ function __dangerous_attach_session -d 'Attach session'
     end
     set cmd_hist dangerous_session_cmd_hist_$argv[1]
     set dir_hist dangerous_session_dir_hist_$argv[1]
-    if  test -z $$dir_hist ^ /dev/null
+    if  test -z $$dir_hist 2> /dev/null
       set $dir_hist $PWD
     end
     set dir_hist_val (count $$dir_hist)
-    cd $$dir_hist[1][$dir_hist_val] ^ /dev/null
+    cd $$dir_hist[1][$dir_hist_val] 2> /dev/null
   end
   set no_prompt_hist 'T'
 end
@@ -459,7 +459,7 @@ function s -d 'Create, delete or attach session'
         return
     end
   end
-  set -l item (contains -i %self $dangerous_sessions_active_pid ^ /dev/null)
+  set -l item (contains -i %self $dangerous_sessions_active_pid 2> /dev/null)
   switch $argv[1]
     case '-e'
       __dangerous_erase_session $argv
@@ -496,11 +496,11 @@ end
 # => Git segment
 ################
 function __dangerous_prompt_git_branch -d 'Return the current branch name'
-    set -l branch (command git symbolic-ref HEAD ^ /dev/null | sed -e 's|^refs/heads/||')
+    set -l branch (command git symbolic-ref HEAD 2> /dev/null | sed -e 's|^refs/heads/||')
     if not test $branch > /dev/null
-        set -l position (command git describe --contains --all HEAD ^ /dev/null)
+        set -l position (command git describe --contains --all HEAD 2> /dev/null)
         if not test $position > /dev/null
-            set -l commit (command git rev-parse HEAD ^ /dev/null | sed 's|\(^.......\).*|\1|')
+            set -l commit (command git rev-parse HEAD 2> /dev/null | sed 's|\(^.......\).*|\1|')
             set_color $dangerous_colors[11]
             if test $commit
             switch $pwd_style
@@ -566,8 +566,8 @@ function __dangerous_prompt_left_symbols -d 'Display symbols'
 
     set -l jobs (jobs | wc -l | tr -d '[:space:]')
     if [ -e ~/.taskrc ]
-        set todo (task due.before:sunday ^ /dev/null | tail -1 | cut -f1 -d' ')
-        set overdue (task due.before:today ^ /dev/null | tail -1 | cut -f1 -d' ')
+        set todo (task due.before:sunday 2> /dev/null | tail -1 | cut -f1 -d' ')
+        set overdue (task due.before:today 2> /dev/null | tail -1 | cut -f1 -d' ')
     end
     if [ -e ~/.reminders ]
         set appointments (rem -a | cut -f1 -d' ')
@@ -629,7 +629,7 @@ function __dangerous_prompt_left_symbols -d 'Display symbols'
             set symbols_urgent 'T'
         end
     else
-        if [ $dangerous_session_current != '' ] ^ /dev/null
+        if [ $dangerous_session_current != '' ] 2> /dev/null
             set symbols $symbols(set_color $dangerous_colors[8])' '(expr (count $dangerous_sessions) - (contains -i $dangerous_session_current $dangerous_sessions))
             set symbols_urgent 'T'
         end
@@ -739,7 +739,7 @@ if not begin
     set -q -x LOGIN
     or set -q -x RANGER_LEVEL
     or set -q -x VIM
-  end ^ /dev/null
+  end 2> /dev/null
   cd $bookmarks[1]
 end
 set -x LOGIN $USER
