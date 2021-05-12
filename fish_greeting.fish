@@ -49,7 +49,7 @@ end
 # => Help
 #########
 function dangerous_help -d 'Show helpfile'
-  set -l readme_file "$fish_path/themes/dangerous/README.md"
+  set -l readme_file "$OMF_PATH/themes/dangerous/README.md"
   if set -q PAGER
     if [ -e $readme_file ]
       eval $PAGER $readme_file
